@@ -47,7 +47,8 @@ export default class GameContainer extends React.Component {
         active: null,
         rotation: 0,
         gameOver: false,
-        timer: null
+        timer: null,
+        nextPiece: null
     }
 
     //
@@ -637,70 +638,18 @@ export default class GameContainer extends React.Component {
     //
     //
     generateNewPiece = () => {
+        const piece = this.state.nextPiece;
+        const next = Math.ceil(Math.random()*7);
 
-        let piece = Math.ceil(Math.random()*7);
+        const rows = this.getPieceCode(piece);
 
-        let topRows = null;
-
-        switch(piece){
-            case square_piece:
-                topRows = [
-                        [0,0,0,0,2,2,0,0,0,0], 
-                        [0,0,0,0,2,2,0,0,0,0]
-                    ];
-                this.insertNewPiece(topRows, piece);
-                break;
-            case t_piece:
-                topRows = [
-                    [0,0,0,2,2,2,0,0,0,0], 
-                    [0,0,0,0,2,0,0,0,0,0]
-                ];
-                this.insertNewPiece(topRows, piece);
-                break;
-            case row_piece:
-                topRows = [
-                    [0,0,0,2,2,2,2,0,0,0], 
-                    [0,0,0,0,0,0,0,0,0,0]
-                ];
-                this.insertNewPiece(topRows, piece);
-                break;
-            case l_right_piece:
-                topRows = [
-                    [0,0,0,0,2,2,2,0,0,0,], 
-                    [0,0,0,0,0,0,2,0,0,0,]
-                ];
-                this.insertNewPiece(topRows, piece);
-                break;
-            case l_left_piece:
-                topRows = [
-                    [0,0,0,2,2,2,0,0,0,0], 
-                    [0,0,0,2,0,0,0,0,0,0]
-                ];
-                this.insertNewPiece(topRows, piece);
-                break;
-            case s_right_piece:
-                topRows = [
-                    [0,0,0,0,2,2,0,0,0,0], 
-                    [0,0,0,0,0,2,2,0,0,0]
-                ];
-                this.insertNewPiece(topRows, piece);
-                break;
-            case s_left_piece:
-                topRows = [
-                    [0,0,0,0,2,2,0,0,0,0], 
-                    [0,0,0,2,2,0,0,0,0,0]
-                ];
-                this.insertNewPiece(topRows, piece);
-                break;
-            default:
-                // nothing
-        }
+        this.insertNewPiece(rows, piece, next);
     }
 
     //
     //
     //
-    insertNewPiece = (topRows, piece) => {
+    insertNewPiece = (topRows, piece, next) => {
         const copy = [...this.state.grid];
 
         let collision = false;
@@ -723,8 +672,65 @@ export default class GameContainer extends React.Component {
             this.setState({gameOver: true, timer: null});
         }
         else{
-            this.setState({grid: copy, active: piece, rotation: 0});
+            this.setState({grid: copy, active: piece, rotation: 0, nextPiece: next});
         }
+    }
+
+    getPieceCode = (piece) => {
+        let topRows = [];
+
+        switch(piece){
+            case square_piece:
+                topRows = [
+                        [0,0,0,0,2,2,0,0,0,0], 
+                        [0,0,0,0,2,2,0,0,0,0]
+                    ];
+                break;
+            case t_piece:
+                topRows = [
+                    [0,0,0,2,2,2,0,0,0,0], 
+                    [0,0,0,0,2,0,0,0,0,0]
+                ];
+                break;
+            case row_piece:
+                topRows = [
+                    [0,0,0,2,2,2,2,0,0,0], 
+                    [0,0,0,0,0,0,0,0,0,0]
+                ];
+                break;
+            case l_right_piece:
+                topRows = [
+                    [0,0,0,0,2,2,2,0,0,0,], 
+                    [0,0,0,0,0,0,2,0,0,0,]
+                ];
+                break;
+            case l_left_piece:
+                topRows = [
+                    [0,0,0,2,2,2,0,0,0,0], 
+                    [0,0,0,2,0,0,0,0,0,0]
+                ];
+                break;
+            case s_right_piece:
+                topRows = [
+                    [0,0,0,0,2,2,0,0,0,0], 
+                    [0,0,0,0,0,2,2,0,0,0]
+                ];
+                break;
+            case s_left_piece:
+                topRows = [
+                    [0,0,0,0,2,2,0,0,0,0], 
+                    [0,0,0,2,2,0,0,0,0,0]
+                ];
+                break;
+            default:
+                // nothing
+        }
+
+        return topRows;
+    }
+
+    getNextPieceCode = () => {
+        return this.getPieceCode(this.state.nextPiece);
     }
 
     //
@@ -736,7 +742,7 @@ export default class GameContainer extends React.Component {
             this.setState({timer: null});
         }
         else{
-            this.setState({timer: setInterval(this.nextStep, 1000)});
+            this.setState({timer: setInterval(this.nextStep, 700)});
         }
     }
 
@@ -747,6 +753,8 @@ export default class GameContainer extends React.Component {
         // this is some brilliant hackery
         // https://stackoverflow.com/questions/39135912/react-onkeydown-onkeyup-events-on-non-input-elements
         document.body.addEventListener('keydown', this.handleKeyDown);
+        const next = Math.ceil(Math.random()*7);
+        this.setState({nextPiece: next});
     }
     
     //
@@ -765,40 +773,69 @@ export default class GameContainer extends React.Component {
                 {
                     this.state.gameOver && <h2 className="game-over">Game Over!</h2>
                 }
-                <table className="game-board">
-                    <tbody>
-                    {
-                        this.state.grid.map((row, row_index) => {
-                            return (<tr key={`r_${row_index}`}>
+                <div className="split">
+                    <div className="main-game">
+                        <table className="game-board">
+                            <tbody>
+                            {
+                                this.state.grid.map((row, row_index) => {
+                                    return (<tr key={`r_${row_index}`}>
+                                        {
+                                            row.map((cell, cell_index) => {
+                                                const cell_value = row[cell_index];
+                                                let classesForCell = "";
+                                                if(cell_value === 0){
+                                                    classesForCell = "empty";
+                                                }
+                                                else if(cell_value === 1){
+                                                    classesForCell = "filled";
+                                                }
+                                                else if(cell_value === 2){
+                                                    classesForCell = "active";
+                                                }
+                                                return <td className={`game-cell ${classesForCell}`} key={`c_${cell_index}`}></td>
+                                            })
+                                        }
+                                    </tr>)
+                                })
+                            }
+                            </tbody>
+                        </table>
+                        <br />
+                        <button onClick={this.toggleGame}>
+                            {
+                                this.state.timer 
+                                ? "Pause Game"
+                                : "Start Game"
+                            }
+                        </button>
+                    </div>
+                    <div className="next-piece">
+                        <table className="game-board">
+                            <tbody>
                                 {
-                                    row.map((cell, cell_index) => {
-                                        const cell_value = this.state.grid[row_index][cell_index];
-                                        let classesForCell = "";
-                                        if(cell_value === 0){
-                                            classesForCell = "empty";
-                                        }
-                                        else if(cell_value === 1){
-                                            classesForCell = "filled";
-                                        }
-                                        else if(cell_value === 2){
-                                            classesForCell = "active";
-                                        }
-                                        return <td className={`game-cell ${classesForCell}`} key={`c_${cell_index}`}></td>
+                                    this.getNextPieceCode().map((row, row_index) => {
+                                        return (<tr key={`r_${row_index}`}>
+                                    {
+                                        row.map((cell, cell_index) => {
+                                            const cell_value = row[cell_index];
+                                            let classesForCell = "";
+                                            if(cell_value === 0){
+                                                classesForCell = "empty";
+                                            }
+                                            else if(cell_value === 2){
+                                                classesForCell = "active";
+                                            }
+                                            return <td className={`game-cell ${classesForCell}`} key={`c_${cell_index}`}></td>
+                                        })
+                                    }
+                                </tr>)
                                     })
                                 }
-                            </tr>)
-                        })
-                    }
-                    </tbody>
-                </table>
-                <br />
-                <button onClick={this.toggleGame}>
-                    {
-                        this.state.timer 
-                        ? "Pause Game"
-                        : "Start Game"
-                    }
-                </button>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>                
             </div>
         )
     }
